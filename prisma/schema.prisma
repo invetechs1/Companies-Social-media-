@@ -1,0 +1,157 @@
+// Bassir Social Pro - multi-tenant social media management platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Users & tenancy ----------
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  isSuperAdmin Boolean      @default(false) // platform owner: can manage all tenants (for reselling)
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+  posts        Post[]       @relation("PostAuthor")
+  approvals    ApprovalEvent[]
+}
+
+// An Organization is a tenant: one of your companies, or a customer you sell the system to.
+model Organization {
+  id            String          @id @default(cuid())
+  name          String
+  slug          String          @unique
+  // White-label branding (per tenant)
+  brandColor    String          @default("#3564fb")
+  logoUrl       String?
+  customDomain  String?
+  // Billing / reselling
+  plan          String          @default("pro") // free | starter | pro | enterprise
+  planStatus    String          @default("active") // active | trial | suspended
+  trialEndsAt   DateTime?
+  createdAt     DateTime        @default(now())
+  memberships   Membership[]
+  socialAccounts SocialAccount[]
+  posts         Post[]
+  media         MediaAsset[]
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  role           String       @default("editor") // owner | admin | editor | viewer
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@unique([userId, organizationId])
+}
+
+// ---------- Social accounts ----------
+
+model SocialAccount {
+  id             String       @id @default(cuid())
+  provider       String // facebook | instagram | twitter | linkedin | tiktok | youtube
+  externalId     String // page id / profile id on the platform
+  displayName    String
+  avatarUrl      String?
+  accessToken    String
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  status         String       @default("connected") // connected | expired | error
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  targets        PostTarget[]
+  metrics        MetricSnapshot[]
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, provider, externalId])
+}
+
+// ---------- Content ----------
+
+model Post {
+  id             String       @id @default(cuid())
+  body           String
+  mediaUrls      String       @default("[]") // JSON array of media URLs
+  status         String       @default("draft") // draft | pending_approval | approved | scheduled | publishing | published | failed
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  author         User         @relation("PostAuthor", fields: [authorId], references: [id])
+  authorId       String
+  targets        PostTarget[]
+  approvals      ApprovalEvent[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// One post can go to many social accounts; each target tracks its own delivery.
+model PostTarget {
+  id              String        @id @default(cuid())
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId          String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  socialAccountId String
+  // Optional per-platform override of the post body
+  bodyOverride    String?
+  status          String        @default("pending") // pending | published | failed
+  externalPostId  String? // id returned by the platform after publishing
+  errorMessage    String?
+  publishedAt     DateTime?
+
+  @@unique([postId, socialAccountId])
+}
+
+model ApprovalEvent {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  actor     User     @relation(fields: [actorId], references: [id])
+  actorId   String
+  action    String // submitted | approved | rejected
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model MediaAsset {
+  id             String       @id @default(cuid())
+  url            String
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  createdAt      DateTime     @default(now())
+}
+
+// ---------- Analytics ----------
+
+model MetricSnapshot {
+  id              String        @id @default(cuid())
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  socialAccountId String
+  capturedAt      DateTime      @default(now())
+  followers       Int           @default(0)
+  impressions     Int           @default(0)
+  engagements     Int           @default(0)
+  clicks          Int           @default(0)
+}
+
+// PKCE / OAuth state storage for in-flight authorization flows
+model OAuthState {
+  id           String   @id @default(cuid())
+  state        String   @unique
+  provider     String
+  organizationId String
+  codeVerifier String?
+  createdAt    DateTime @default(now())
+}
