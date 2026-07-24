@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "./db";
 
 const SECRET = new TextEncoder().encode(
@@ -15,19 +15,21 @@ export type SessionPayload = {
   isSuperAdmin: boolean;
 };
 
-export async function createSession(payload: SessionPayload) {
+/** Creates the session cookie and returns the JWT (also usable as a Bearer token by the mobile app). */
+export async function createSession(payload: SessionPayload): Promise<string> {
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("30d")
     .sign(SECRET);
   cookies().set(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60 * 24 * 30,
     path: "/",
   });
+  return token;
 }
 
 export async function destroySession() {
@@ -35,7 +37,12 @@ export async function destroySession() {
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
-  const token = cookies().get(COOKIE)?.value;
+  // Web: session cookie. Mobile app: Authorization: Bearer <token>.
+  let token = cookies().get(COOKIE)?.value;
+  if (!token) {
+    const auth = headers().get("authorization");
+    if (auth?.startsWith("Bearer ")) token = auth.slice(7);
+  }
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, SECRET);

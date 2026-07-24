@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Bassir Social Pro",
+    "slug": "bassir-social-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "bassirsocial",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#151c56"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.invetechs.bassirsocialpro"
+    },
+    "android": {
+      "package": "com.invetechs.bassirsocialpro",
+      "adaptiveIcon": {
+        "backgroundColor": "#3564fb"
+      }
+    }
+  }
+}

@@ -36,6 +36,8 @@ model Organization {
   plan          String          @default("pro") // free | starter | pro | enterprise
   planStatus    String          @default("active") // active | trial | suspended
   trialEndsAt   DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
   createdAt     DateTime        @default(now())
   memberships   Membership[]
   socialAccounts SocialAccount[]

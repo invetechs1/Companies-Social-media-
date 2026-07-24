@@ -13,11 +13,16 @@ export async function POST(req: NextRequest) {
     return jsonError("Invalid email or password.", 401);
   }
 
-  await createSession({
+  const token = await createSession({
     userId: user.id,
     email: user.email,
     name: user.name,
     isSuperAdmin: user.isSuperAdmin,
   });
-  return NextResponse.json({ ok: true });
+  // token is returned for the mobile app (sent as Authorization: Bearer <token>)
+  return NextResponse.json({
+    ok: true,
+    token,
+    user: { id: user.id, name: user.name, email: user.email, isSuperAdmin: user.isSuperAdmin },
+  });
 }
