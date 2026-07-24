@@ -128,3 +128,19 @@ src/app/api/                  # REST API (auth, orgs, posts, oauth, media, cron)
 src/app/dashboard/[orgId]/    # workspace UI (composer, calendar, approvals, …)
 src/app/dashboard/admin/      # platform-owner tenant management (reselling)
 ```
+
+## Billing (Stripe)
+
+Tenants subscribe to plans via Stripe Checkout; invoices, cards and cancellation are self-served in the Stripe customer portal (Settings → *Manage billing & invoices*).
+
+Setup:
+
+1. Create a [Stripe](https://dashboard.stripe.com) account and three recurring **Prices** (Starter / Pro / Enterprise).
+2. Fill in `.env`: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_ENTERPRISE`.
+3. Add a webhook endpoint `{APP_URL}/api/billing/webhook` with events `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, and set `STRIPE_WEBHOOK_SECRET`.
+
+The webhook keeps each tenant's `plan` / `planStatus` in sync automatically (payment failure → `suspended`).
+
+## Mobile app (iOS & Android)
+
+A React Native (Expo) app lives in [`mobile/`](mobile/) — sign in with the same accounts, compose/schedule/publish, and approve posts from the phone. See [`mobile/README.md`](mobile/README.md) for dev & store-build instructions.

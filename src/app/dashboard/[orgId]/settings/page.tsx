@@ -19,6 +19,8 @@ export default function SettingsPage() {
   const [org, setOrg] = useState<Org | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingMsg, setBillingMsg] = useState("");
 
   const load = useCallback(async () => {
     const d = await (await fetch(`/api/orgs`)).json();
@@ -82,13 +84,59 @@ export default function SettingsPage() {
       </form>
 
       <div className="mt-6 card p-6">
-        <h2 className="font-semibold">Plan</h2>
+        <h2 className="font-semibold">Plan & billing</h2>
         <p className="text-sm text-slate-600 mt-2">
           Current plan: <span className="badge bg-brand-50 text-brand-700 capitalize">{org.plan}</span>{" "}
           <span className="badge bg-slate-100 text-slate-600 capitalize ml-1">{org.planStatus}</span>
         </p>
-        <p className="text-xs text-slate-400 mt-2">Plans are managed by the platform owner from the Tenants panel.</p>
+        <div className="mt-4 flex gap-2 flex-wrap">
+          {["starter", "pro", "enterprise"].map((p) => (
+            <button
+              key={p}
+              className={org.plan === p ? "btn-secondary capitalize" : "btn-primary capitalize"}
+              disabled={billingBusy || org.plan === p}
+              onClick={() => checkout(p)}
+            >
+              {org.plan === p ? `Current: ${p}` : `Upgrade to ${p}`}
+            </button>
+          ))}
+        </div>
+        <button className="btn-secondary mt-3" disabled={billingBusy} onClick={openPortal}>
+          🧾 Manage billing & invoices
+        </button>
+        {billingMsg && <p className="text-sm text-red-600 mt-3">{billingMsg}</p>}
+        <p className="text-xs text-slate-400 mt-3">
+          Payments are processed by Stripe. Invoices, payment methods and cancellation are handled in the billing portal.
+        </p>
       </div>
     </div>
   );
+
+  async function checkout(plan: string) {
+    setBillingBusy(true);
+    setBillingMsg("");
+    const res = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orgId, plan }),
+    });
+    const d = await res.json();
+    setBillingBusy(false);
+    if (res.ok && d.url) window.location.href = d.url;
+    else setBillingMsg(d.error || "Checkout failed");
+  }
+
+  async function openPortal() {
+    setBillingBusy(true);
+    setBillingMsg("");
+    const res = await fetch("/api/billing/portal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orgId }),
+    });
+    const d = await res.json();
+    setBillingBusy(false);
+    if (res.ok && d.url) window.location.href = d.url;
+    else setBillingMsg(d.error || "Could not open billing portal");
+  }
 }
