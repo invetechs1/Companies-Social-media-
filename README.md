@@ -1,4 +1,4 @@
-# SocialHub Pro
+# Bassir Social Pro
 
 A **multi-tenant, white-label social media management platform** — the same category of product as Hootsuite, Buffer and Sprout Social, but one **you own outright** and can resell to other companies under your own brand.
 
@@ -10,7 +10,7 @@ Built for managing all social accounts of your companies:
 
 …and for onboarding unlimited customer companies as paying tenants.
 
-> **Why not just clone Hootsuite/Buffer?** Those are closed-source — their code cannot be cloned. The strongest open-source alternative (Postiz) is AGPL-licensed, which would legally force you to publish your source code if you sell or host it commercially. SocialHub Pro is written from scratch for this repository, so **you hold 100% of the IP and can sell it with no license restrictions.**
+> **Why not just clone Hootsuite/Buffer?** Those are closed-source — their code cannot be cloned. The strongest open-source alternative (Postiz) is AGPL-licensed, which would legally force you to publish your source code if you sell or host it commercially. Bassir Social Pro is written from scratch for this repository, so **you hold 100% of the IP and can sell it with no license restrictions.**
 
 ---
 

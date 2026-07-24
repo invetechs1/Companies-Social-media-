@@ -20,6 +20,6 @@ async function tick() {
   }
 }
 
-console.log("[worker] SocialHub Pro scheduler started (interval: 60s)");
+console.log("[worker] Bassir Social Pro scheduler started (interval: 60s)");
 tick();
 setInterval(tick, INTERVAL_MS);

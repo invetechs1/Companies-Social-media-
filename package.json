@@ -1,8 +1,8 @@
 {
-  "name": "socialhub-pro",
+  "name": "bassir-social-pro",
   "version": "1.0.0",
   "private": true,
-  "description": "SocialHub Pro - Multi-tenant, white-label social media management platform. Manage and publish to all social accounts for Azoom, Alarrab, MCC (Hadathah) and resell to other companies.",
+  "description": "Bassir Social Pro - Multi-tenant, white-label social media management platform. Manage and publish to all social accounts for Azoom, Alarrab, MCC (Hadathah) and resell to other companies.",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

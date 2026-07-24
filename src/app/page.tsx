@@ -24,7 +24,7 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-brand-600 text-white grid place-items-center font-bold">S</div>
-            <span className="font-semibold text-lg">SocialHub Pro</span>
+            <span className="font-semibold text-lg">Bassir Social Pro</span>
           </div>
           <nav className="flex items-center gap-3">
             <Link href="/login" className="btn-secondary">Sign in</Link>
@@ -82,7 +82,7 @@ export default function Landing() {
       </section>
 
       <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        SocialHub Pro — a white-label social media management platform.
+        Bassir Social Pro — a white-label social media management platform.
       </footer>
     </main>
   );

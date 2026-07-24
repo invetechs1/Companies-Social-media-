@@ -1,4 +1,4 @@
-// SocialHub Pro - multi-tenant social media management platform
+// Bassir Social Pro - multi-tenant social media management platform
 
 generator client {
   provider = "prisma-client-js"

@@ -44,7 +44,7 @@ export default function Sidebar({
           >
             {org.name[0]}
           </div>
-          <span className="font-semibold truncate">SocialHub Pro</span>
+          <span className="font-semibold truncate">Bassir Social Pro</span>
         </div>
         <select
           className="input mt-3"
