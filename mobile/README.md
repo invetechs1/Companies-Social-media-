@@ -37,8 +37,8 @@ eas submit                       # optional: submit directly to the stores
 ```
 
 Bundle IDs are pre-configured in `app.json`:
-- iOS: `com.invetechs.bassirsocialpro`
-- Android: `com.invetechs.bassirsocialpro`
+- iOS: `com.bassir.bassirsocialpro`
+- Android: `com.bassir.bassirsocialpro`
 
 Add your app icon (1024×1024 PNG) as `assets/icon.png` and reference it in `app.json` (`"icon": "./assets/icon.png"`) before store submission.
 

@@ -11,10 +11,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.invetechs.bassirsocialpro"
+      "bundleIdentifier": "com.bassir.bassirsocialpro"
     },
     "android": {
-      "package": "com.invetechs.bassirsocialpro",
+      "package": "com.bassir.bassirsocialpro",
       "adaptiveIcon": {
         "backgroundColor": "#3564fb"
       }

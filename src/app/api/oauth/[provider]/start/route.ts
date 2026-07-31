@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { getSession, requireOrgAccess } from "@/lib/auth";
 import { getProvider, isProviderConfigured } from "@/lib/providers";
+import { APP_URL } from "@/lib/providers/types";
 import type { ProviderKey } from "@/lib/providers/types";
 
 /**
@@ -11,7 +12,7 @@ import type { ProviderKey } from "@/lib/providers/types";
  */
 export async function GET(req: NextRequest, { params }: { params: { provider: string } }) {
   const session = await getSession();
-  if (!session) return NextResponse.redirect(new URL("/login", req.url));
+  if (!session) return NextResponse.redirect(new URL("/login", APP_URL));
 
   const orgId = req.nextUrl.searchParams.get("orgId");
   if (!orgId) return NextResponse.json({ error: "orgId is required" }, { status: 400 });
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
 
   if (!isProviderConfigured(params.provider as ProviderKey)) {
     return NextResponse.redirect(
-      new URL(`/dashboard/${orgId}/accounts?error=provider_not_configured&provider=${params.provider}`, req.url)
+      new URL(`/dashboard/${orgId}/accounts?error=provider_not_configured&provider=${params.provider}`, APP_URL)
     );
   }
 
