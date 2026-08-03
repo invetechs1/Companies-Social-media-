@@ -38,12 +38,7 @@ export default function Sidebar({
     <aside className="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col">
       <div className="p-4 border-b border-slate-200">
         <div className="flex items-center gap-2">
-          <div
-            className="h-8 w-8 rounded-lg text-white grid place-items-center font-bold"
-            style={{ backgroundColor: org.brandColor }}
-          >
-            {org.name[0]}
-          </div>
+          <img src="/brand/icon-256.png" alt="" className="h-10 w-10" />
           <span className="font-semibold truncate">Bassir Social Pro</span>
         </div>
         <select

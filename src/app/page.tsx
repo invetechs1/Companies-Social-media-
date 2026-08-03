@@ -23,7 +23,7 @@ export default function Landing() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-brand-600 text-white grid place-items-center font-bold">S</div>
+            <img src="/brand/icon-256.png" alt="" className="h-11 w-11" />
             <span className="font-semibold text-lg">Bassir Social Pro</span>
           </div>
           <nav className="flex items-center gap-3">

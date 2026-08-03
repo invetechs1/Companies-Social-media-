@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { getProvider } from "./providers";
+import { APP_URL } from "./providers/types";
 
 /**
  * Publish a single post to all of its targets.
@@ -14,7 +15,12 @@ export async function publishPost(postId: string) {
 
   await prisma.post.update({ where: { id: postId }, data: { status: "publishing" } });
 
-  const mediaUrls: string[] = JSON.parse(post.mediaUrls || "[]");
+  // Media is stored as a relative path (e.g. "/uploads/{orgId}/{file}"); every
+  // provider either fetches it itself (YouTube, LinkedIn) or hands the URL to
+  // the platform to fetch (Facebook, Instagram, TikTok), so it must be absolute.
+  const mediaUrls: string[] = JSON.parse(post.mediaUrls || "[]").map((u: string) =>
+    /^https?:\/\//i.test(u) ? u : `${APP_URL}${u}`
+  );
   let anySuccess = false;
   let anyFailure = false;
 

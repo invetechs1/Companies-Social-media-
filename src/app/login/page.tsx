@@ -29,7 +29,7 @@ export default function LoginPage() {
     <main className="min-h-screen grid place-items-center px-6">
       <div className="card p-8 w-full max-w-md">
         <div className="flex items-center gap-2 mb-6">
-          <div className="h-8 w-8 rounded-lg bg-brand-600 text-white grid place-items-center font-bold">S</div>
+          <img src="/brand/icon-256.png" alt="" className="h-11 w-11" />
           <span className="font-semibold text-lg">Bassir Social Pro</span>
         </div>
         <h1 className="text-xl font-semibold">Sign in</h1>
