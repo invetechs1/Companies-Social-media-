@@ -62,6 +62,27 @@ export const youtubeAdapter: ProviderAdapter = {
     ];
   },
 
+  async refresh(refreshToken: string) {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: process.env.GOOGLE_CLIENT_ID || "",
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+        grant_type: "refresh_token",
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new ProviderError("youtube", JSON.stringify(json));
+    return {
+      accessToken: json.access_token,
+      // Google does not rotate refresh tokens on use — keep reusing the original.
+      refreshToken,
+      tokenExpiresAt: json.expires_in ? new Date(Date.now() + json.expires_in * 1000) : undefined,
+    };
+  },
+
   async publish({ body, mediaUrls, account }: PublishInput) {
     if (mediaUrls.length === 0)
       throw new ProviderError("youtube", "YouTube requires a video file.");
