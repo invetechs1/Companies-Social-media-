@@ -89,7 +89,13 @@ export const tiktokAdapter: ProviderAdapter = {
         body: JSON.stringify({
           post_info: {
             title: body.slice(0, 150),
-            privacy_level: "PUBLIC_TO_EVERYONE",
+            // Unaudited/sandbox TikTok apps (client keys starting "sb") may only post
+            // as SELF_ONLY — PUBLIC_TO_EVERYONE requires passing TikTok's Content
+            // Posting API audit. Switch this once the app is approved for public posting.
+            privacy_level: "SELF_ONLY",
+            disable_duet: true,
+            disable_comment: true,
+            disable_stitch: true,
           },
           source_info: {
             source: "PULL_FROM_URL",
