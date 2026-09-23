@@ -20,11 +20,19 @@ export interface PublishResult {
   externalPostId: string;
 }
 
+export interface TokenRefreshResult {
+  accessToken: string;
+  refreshToken?: string;
+  tokenExpiresAt?: Date;
+}
+
 export interface ProviderAdapter {
   key: ProviderKey;
   label: string;
   /** Build the URL the user is redirected to for OAuth consent. */
   getAuthUrl(state: string, codeChallenge?: string): string;
+  /** Optional: exchange a refresh token for a new access token. Only implemented by providers with short-lived tokens. */
+  refresh?(refreshToken: string): Promise<TokenRefreshResult>;
   /** Exchange the OAuth code for tokens + account info. May return several accounts (e.g. multiple Facebook Pages). */
   handleCallback(
     code: string,

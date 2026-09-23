@@ -1,5 +1,40 @@
 import { prisma } from "./db";
 import { getProvider } from "./providers";
+import { APP_URL } from "./providers/types";
+
+/** Uploaded media is stored as a relative "/uploads/..." path; providers need an absolute, publicly-fetchable URL. */
+function toAbsoluteUrl(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `${APP_URL}${url}`;
+}
+
+const REFRESH_BUFFER_MS = 5 * 60 * 1000;
+
+/** Refreshes an account's access token if the provider supports it and it's expired (or about to). */
+async function ensureFreshAccessToken(account: {
+  id: string;
+  provider: string;
+  accessToken: string;
+  refreshToken: string | null;
+  tokenExpiresAt: Date | null;
+}): Promise<string> {
+  const provider = getProvider(account.provider);
+  if (!provider.refresh || !account.refreshToken) return account.accessToken;
+
+  const needsRefresh =
+    !account.tokenExpiresAt || account.tokenExpiresAt.getTime() - Date.now() < REFRESH_BUFFER_MS;
+  if (!needsRefresh) return account.accessToken;
+
+  const result = await provider.refresh(account.refreshToken);
+  await prisma.socialAccount.update({
+    where: { id: account.id },
+    data: {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken ?? account.refreshToken,
+      tokenExpiresAt: result.tokenExpiresAt ?? null,
+    },
+  });
+  return result.accessToken;
+}
 
 /**
  * Publish a single post to all of its targets.
@@ -14,7 +49,7 @@ export async function publishPost(postId: string) {
 
   await prisma.post.update({ where: { id: postId }, data: { status: "publishing" } });
 
-  const mediaUrls: string[] = JSON.parse(post.mediaUrls || "[]");
+  const mediaUrls: string[] = JSON.parse(post.mediaUrls || "[]").map(toAbsoluteUrl);
   let anySuccess = false;
   let anyFailure = false;
 
@@ -22,12 +57,13 @@ export async function publishPost(postId: string) {
     if (target.status === "published") { anySuccess = true; continue; }
     try {
       const provider = getProvider(target.socialAccount.provider);
+      const accessToken = await ensureFreshAccessToken(target.socialAccount);
       const result = await provider.publish({
         body: target.bodyOverride || post.body,
         mediaUrls,
         account: {
           externalId: target.socialAccount.externalId,
-          accessToken: target.socialAccount.accessToken,
+          accessToken,
           refreshToken: target.socialAccount.refreshToken,
         },
       });

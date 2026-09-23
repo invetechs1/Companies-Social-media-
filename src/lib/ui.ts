@@ -17,6 +17,44 @@ export const STATUS_META: Record<string, { label: string; className: string }> =
   failed: { label: "Failed", className: "bg-red-100 text-red-800" },
 };
 
+const AUTH_ERROR_HINTS = [
+  "unauthorized",
+  "oauthexception",
+  "access_token_invalid",
+  "invalid_token",
+  "expired",
+];
+
+/** Turns a raw provider error (often "[provider] {json}") into a short, human-readable message. */
+export function friendlyError(raw: string | null | undefined): { message: string; isAuthError: boolean } {
+  if (!raw) return { message: "", isAuthError: false };
+
+  // Strip a leading "[provider] " prefix added by ProviderError.
+  const withoutPrefix = raw.replace(/^\[[a-z]+\]\s*/i, "");
+
+  // The remainder may itself have leading text before a JSON payload — pull out the JSON substring.
+  const jsonStart = withoutPrefix.indexOf("{");
+  const jsonEnd = withoutPrefix.lastIndexOf("}");
+  let message = withoutPrefix;
+
+  if (jsonStart !== -1 && jsonEnd > jsonStart) {
+    try {
+      const parsed = JSON.parse(withoutPrefix.slice(jsonStart, jsonEnd + 1));
+      message =
+        parsed?.error?.message ||
+        parsed?.detail ||
+        parsed?.title ||
+        parsed?.message ||
+        withoutPrefix;
+    } catch {
+      // not valid JSON — use as-is
+    }
+  }
+
+  const isAuthError = AUTH_ERROR_HINTS.some((hint) => raw.toLowerCase().includes(hint));
+  return { message, isAuthError };
+}
+
 export function fmtDate(d: string | Date | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleString(undefined, {

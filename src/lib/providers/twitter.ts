@@ -62,6 +62,32 @@ export const twitterAdapter: ProviderAdapter = {
     ];
   },
 
+  async refresh(refreshToken: string) {
+    const basic = Buffer.from(
+      `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
+    ).toString("base64");
+    const res = await fetch("https://api.twitter.com/2/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${basic}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: process.env.TWITTER_CLIENT_ID || "",
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new ProviderError("twitter", JSON.stringify(json));
+    return {
+      accessToken: json.access_token,
+      // Twitter rotates refresh tokens on every use — the old one becomes invalid.
+      refreshToken: json.refresh_token || refreshToken,
+      tokenExpiresAt: json.expires_in ? new Date(Date.now() + json.expires_in * 1000) : undefined,
+    };
+  },
+
   async publish({ body, account }: PublishInput) {
     const res = await fetch("https://api.twitter.com/2/tweets", {
       method: "POST",
