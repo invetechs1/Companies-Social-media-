@@ -1,6 +1,6 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const GRAPH = "https://graph.facebook.com/v23.0";
 
 /**
  * Facebook Pages via the Meta Graph API.
@@ -19,7 +19,7 @@ export const facebookAdapter: ProviderAdapter = {
         "pages_show_list,pages_manage_posts,pages_read_engagement,business_management",
       response_type: "code",
     });
-    return `https://www.facebook.com/v21.0/dialog/oauth?${params}`;
+    return `https://www.facebook.com/v23.0/dialog/oauth?${params}`;
   },
 
   async handleCallback(code: string) {

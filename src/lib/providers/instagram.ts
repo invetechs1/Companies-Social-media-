@@ -1,6 +1,6 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const GRAPH = "https://graph.facebook.com/v23.0";
 
 /**
  * Instagram Business accounts via the Meta Graph API (linked to a Facebook Page).
@@ -19,7 +19,7 @@ export const instagramAdapter: ProviderAdapter = {
         "instagram_basic,instagram_content_publish,pages_show_list,business_management",
       response_type: "code",
     });
-    return `https://www.facebook.com/v21.0/dialog/oauth?${params}`;
+    return `https://www.facebook.com/v23.0/dialog/oauth?${params}`;
   },
 
   async handleCallback(code: string) {
