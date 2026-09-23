@@ -84,6 +84,11 @@ export const linkedinAdapter: ProviderAdapter = {
     });
     if (!res.ok) {
       const text = await res.text();
+      // LinkedIn rejects re-submitting identical content it already accepted (spam
+      // protection). That means the post genuinely exists — treat it as success
+      // instead of a failure that invites endless, pointless retries.
+      const duplicate = text.match(/duplicate of (urn:li:share:\d+)/);
+      if (duplicate) return { externalPostId: duplicate[1] };
       throw new ProviderError("linkedin", text);
     }
     const id = res.headers.get("x-restli-id") || "";
