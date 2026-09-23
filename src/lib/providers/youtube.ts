@@ -1,4 +1,5 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
+import { isVideoUrl } from "./mediaType";
 
 /**
  * YouTube via Google OAuth + YouTube Data API v3.
@@ -85,7 +86,9 @@ export const youtubeAdapter: ProviderAdapter = {
 
   async publish({ body, mediaUrls, account }: PublishInput) {
     if (mediaUrls.length === 0)
-      throw new ProviderError("youtube", "YouTube requires a video file.");
+      throw new ProviderError("youtube", "This post needs a video attached before it can go to YouTube.");
+    if (!isVideoUrl(mediaUrls[0]))
+      throw new ProviderError("youtube", "YouTube only accepts video files. Please attach a video instead of an image.");
 
     // Fetch the video then upload via the simple upload endpoint
     const videoRes = await fetch(mediaUrls[0]);

@@ -1,4 +1,5 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
+import { isVideoUrl } from "./mediaType";
 
 /**
  * TikTok via the Content Posting API.
@@ -77,7 +78,9 @@ export const tiktokAdapter: ProviderAdapter = {
 
   async publish({ body, mediaUrls, account }: PublishInput) {
     if (mediaUrls.length === 0)
-      throw new ProviderError("tiktok", "TikTok requires a video file.");
+      throw new ProviderError("tiktok", "This post needs a video attached before it can go to TikTok.");
+    if (!isVideoUrl(mediaUrls[0]))
+      throw new ProviderError("tiktok", "TikTok only accepts video files. Please attach a video instead of an image.");
     const res = await fetch(
       "https://open.tiktokapis.com/v2/post/publish/video/init/",
       {
