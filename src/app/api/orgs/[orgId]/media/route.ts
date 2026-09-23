@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
     await mkdir(dir, { recursive: true });
     await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
 
-    const url = `/uploads/${params.orgId}/${name}`;
+    const url = `/api/uploads/${params.orgId}/${name}`;
     const asset = await prisma.mediaAsset.create({
       data: {
         url,
