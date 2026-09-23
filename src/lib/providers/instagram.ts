@@ -74,8 +74,12 @@ export const instagramAdapter: ProviderAdapter = {
 
     // Video containers process asynchronously — wait until Instagram finishes
     // downloading/transcoding before publishing (images are ready immediately).
+    // Kept well under the reverse proxy's 60s read timeout, which covers this
+    // whole publish request (all of a post's targets run sequentially in one
+    // call) — if a video is still processing when this returns, retrying the
+    // post shortly after will find it already FINISHED and publish instantly.
     if (isVideo) {
-      const deadline = Date.now() + 90_000;
+      const deadline = Date.now() + 35_000;
       while (Date.now() < deadline) {
         const statusRes = await fetch(
           `${GRAPH}/${container.id}?fields=status_code&access_token=${account.accessToken}`
@@ -85,7 +89,7 @@ export const instagramAdapter: ProviderAdapter = {
         if (statusJson.status_code === "ERROR") {
           throw new ProviderError("instagram", "Instagram could not process this video. Please try a different file.");
         }
-        await new Promise((r) => setTimeout(r, 3000));
+        await new Promise((r) => setTimeout(r, 2500));
       }
     }
 
