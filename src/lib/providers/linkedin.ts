@@ -4,6 +4,17 @@ import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./typ
  * LinkedIn member/organization posts via the LinkedIn REST API.
  * Requires an app with w_member_social (and w_organization_social for company pages).
  */
+
+/**
+ * LinkedIn requires a "LinkedIn-Version: YYYYMM" header, and each version stops being
+ * accepted ~12 months after release. Compute a recent-but-not-bleeding-edge version at
+ * request time instead of hardcoding a date that will eventually go stale again.
+ */
+function linkedinApiVersion(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 2);
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 export const linkedinAdapter: ProviderAdapter = {
   key: "linkedin",
   label: "LinkedIn",
@@ -60,7 +71,7 @@ export const linkedinAdapter: ProviderAdapter = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${account.accessToken}`,
         "X-Restli-Protocol-Version": "2.0.0",
-        "LinkedIn-Version": "202411",
+        "LinkedIn-Version": linkedinApiVersion(),
       },
       body: JSON.stringify({
         author: `urn:li:person:${account.externalId}`,
