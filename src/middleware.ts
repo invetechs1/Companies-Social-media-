@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { publicOrigin } from "@/lib/origin";
 
 const SECRET = new TextEncoder().encode(process.env.AUTH_SECRET || "dev-secret-change-me");
 
@@ -13,11 +14,12 @@ export async function middleware(req: NextRequest) {
     } catch {}
   }
   const { pathname } = req.nextUrl;
+  const origin = publicOrigin(req.headers, req.url);
   if (pathname.startsWith("/dashboard") && !authed) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/login", origin));
   }
   if ((pathname === "/login" || pathname === "/signup") && authed) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/dashboard", origin));
   }
   return NextResponse.next();
 }
