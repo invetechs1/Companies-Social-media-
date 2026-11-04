@@ -1,4 +1,5 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
+import { isVideoUrl } from "./mediaType";
 
 /**
  * TikTok via the Content Posting API.
@@ -58,9 +59,31 @@ export const tiktokAdapter: ProviderAdapter = {
     ];
   },
 
+  async refresh(refreshToken: string) {
+    const res = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_key: process.env.TIKTOK_CLIENT_KEY || "",
+        client_secret: process.env.TIKTOK_CLIENT_SECRET || "",
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) throw new ProviderError("tiktok", JSON.stringify(json));
+    return {
+      accessToken: json.access_token,
+      refreshToken: json.refresh_token || refreshToken,
+      tokenExpiresAt: json.expires_in ? new Date(Date.now() + json.expires_in * 1000) : undefined,
+    };
+  },
+
   async publish({ body, mediaUrls, account }: PublishInput) {
     if (mediaUrls.length === 0)
-      throw new ProviderError("tiktok", "TikTok requires a video file.");
+      throw new ProviderError("tiktok", "This post needs a video attached before it can go to TikTok.");
+    if (!isVideoUrl(mediaUrls[0]))
+      throw new ProviderError("tiktok", "TikTok only accepts video files. Please attach a video instead of an image.");
 
     // Unaudited apps (and private accounts) can't post PUBLIC_TO_EVERYONE —
     // TikTok requires querying which privacy levels this creator actually
@@ -102,6 +125,9 @@ export const tiktokAdapter: ProviderAdapter = {
           post_info: {
             title: body.slice(0, 150),
             privacy_level: privacyLevel,
+            disable_duet: true,
+            disable_comment: true,
+            disable_stitch: true,
           },
           source_info: {
             source: "PULL_FROM_URL",

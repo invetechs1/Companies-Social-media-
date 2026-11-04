@@ -5,7 +5,9 @@ import { createSession } from "@/lib/auth";
 import { jsonError } from "@/lib/api";
 
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
+  const body = await req.json();
+  const password = body.password;
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email || !password) return jsonError("Email and password are required.");
 
   const user = await prisma.user.findUnique({ where: { email } });

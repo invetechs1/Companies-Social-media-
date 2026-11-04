@@ -8,6 +8,7 @@ build/
 .env.production
 prisma/*.db
 prisma/*.db-journal
+prisma/backups/
 public/uploads/*
 !public/uploads/.gitkeep
 .DS_Store

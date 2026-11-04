@@ -15,7 +15,8 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return jsonError(parsed.error.errors[0].message);
-  const { name, email, password, companyName } = parsed.data;
+  const { name, password, companyName } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return jsonError("An account with this email already exists.", 409);

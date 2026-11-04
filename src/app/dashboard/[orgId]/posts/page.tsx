@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { PROVIDER_META, STATUS_META, fmtDate } from "@/lib/ui";
+import Link from "next/link";
+import { PROVIDER_META, STATUS_META, fmtDate, friendlyError } from "@/lib/ui";
 
 type Post = {
   id: string;
@@ -84,19 +85,35 @@ export default function PostsPage() {
                     {p.scheduledAt && <span>🕒 {fmtDate(p.scheduledAt)}</span>}
                     {p.publishedAt && <span>✅ {fmtDate(p.publishedAt)}</span>}
                     <span className="flex gap-1">
-                      {p.targets.map((t) => (
-                        <span key={t.id} title={`${t.socialAccount.displayName}: ${t.status}${t.errorMessage ? ` — ${t.errorMessage}` : ""}`}>
-                          {PROVIDER_META[t.socialAccount.provider]?.icon}
-                          {t.status === "failed" && "⚠️"}
-                        </span>
-                      ))}
+                      {p.targets.map((t) => {
+                        const { message } = friendlyError(t.errorMessage);
+                        return (
+                          <span key={t.id} title={`${t.socialAccount.displayName}: ${t.status}${message ? ` — ${message}` : ""}`}>
+                            {PROVIDER_META[t.socialAccount.provider]?.icon}
+                            {t.status === "failed" && "⚠️"}
+                          </span>
+                        );
+                      })}
                     </span>
                   </div>
                   {p.targets.some((t) => t.errorMessage) && (
-                    <div className="mt-2 text-xs text-red-600">
-                      {p.targets.filter((t) => t.errorMessage).map((t) => (
-                        <div key={t.id}>{t.socialAccount.displayName}: {t.errorMessage}</div>
-                      ))}
+                    <div className="mt-2 text-xs text-red-600 space-y-0.5">
+                      {p.targets.filter((t) => t.errorMessage).map((t) => {
+                        const { message, isAuthError } = friendlyError(t.errorMessage);
+                        return (
+                          <div key={t.id}>
+                            {t.socialAccount.displayName}: {message}
+                            {isAuthError && (
+                              <>
+                                {" — "}
+                                <Link href={`/dashboard/${orgId}/accounts`} className="underline">
+                                  reconnect this account
+                                </Link>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

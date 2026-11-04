@@ -12,11 +12,11 @@ import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./typ
  * inside the active window (this month's may not be rolled out yet).
  */
 function linkedinApiVersion(): string {
-  const d = new Date();
-  d.setUTCMonth(d.getUTCMonth() - 1);
-  const year = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}${month}`;
+  const now = new Date();
+  // Pure month arithmetic (not Date.setMonth) so e.g. 31 March - 1 month can't
+  // overflow into the current month.
+  const idx = now.getUTCFullYear() * 12 + now.getUTCMonth() - 1;
+  return `${Math.floor(idx / 12)}${String((idx % 12) + 1).padStart(2, "0")}`;
 }
 
 /**
@@ -137,6 +137,11 @@ export const linkedinAdapter: ProviderAdapter = {
     });
     if (!res.ok) {
       const text = await res.text();
+      // LinkedIn rejects re-submitting identical content it already accepted (spam
+      // protection). That means the post genuinely exists — treat it as success
+      // instead of a failure that invites endless, pointless retries.
+      const duplicate = text.match(/duplicate of (urn:li:share:\d+)/);
+      if (duplicate) return { externalPostId: duplicate[1] };
       throw new ProviderError("linkedin", text);
     }
     const id = res.headers.get("x-restli-id") || "";

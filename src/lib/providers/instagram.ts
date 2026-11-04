@@ -1,6 +1,7 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
+import { isVideoUrl } from "./mediaType";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const GRAPH = "https://graph.facebook.com/v23.0";
 
 /**
  * Instagram Business accounts via the Meta Graph API (linked to a Facebook Page).
@@ -19,7 +20,7 @@ export const instagramAdapter: ProviderAdapter = {
         "instagram_basic,instagram_content_publish,pages_show_list,business_management",
       response_type: "code",
     });
-    return `https://www.facebook.com/v21.0/dialog/oauth?${params}`;
+    return `https://www.facebook.com/v23.0/dialog/oauth?${params}`;
   },
 
   async handleCallback(code: string) {
@@ -54,20 +55,43 @@ export const instagramAdapter: ProviderAdapter = {
 
   async publish({ body, mediaUrls, account }: PublishInput) {
     if (mediaUrls.length === 0) {
-      throw new ProviderError("instagram", "Instagram requires at least one image or video.");
+      throw new ProviderError("instagram", "This post needs a photo or video attached before it can go to Instagram.");
     }
+    const isVideo = isVideoUrl(mediaUrls[0]);
+
     // 1. Create a media container
     const containerRes = await fetch(`${GRAPH}/${account.externalId}/media`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_url: mediaUrls[0],
-        caption: body,
-        access_token: account.accessToken,
-      }),
+      body: JSON.stringify(
+        isVideo
+          ? { video_url: mediaUrls[0], media_type: "REELS", caption: body, access_token: account.accessToken }
+          : { image_url: mediaUrls[0], caption: body, access_token: account.accessToken }
+      ),
     });
     const container = await containerRes.json();
     if (!containerRes.ok) throw new ProviderError("instagram", JSON.stringify(container));
+
+    // Video containers process asynchronously — wait until Instagram finishes
+    // downloading/transcoding before publishing (images are ready immediately).
+    // Kept well under the reverse proxy's 60s read timeout, which covers this
+    // whole publish request (all of a post's targets run sequentially in one
+    // call) — if a video is still processing when this returns, retrying the
+    // post shortly after will find it already FINISHED and publish instantly.
+    if (isVideo) {
+      const deadline = Date.now() + 35_000;
+      while (Date.now() < deadline) {
+        const statusRes = await fetch(
+          `${GRAPH}/${container.id}?fields=status_code&access_token=${account.accessToken}`
+        );
+        const statusJson = await statusRes.json();
+        if (statusJson.status_code === "FINISHED") break;
+        if (statusJson.status_code === "ERROR") {
+          throw new ProviderError("instagram", "Instagram could not process this video. Please try a different file.");
+        }
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+    }
 
     // 2. Publish the container
     const publishRes = await fetch(`${GRAPH}/${account.externalId}/media_publish`, {

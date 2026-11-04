@@ -1,6 +1,7 @@
 import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./types";
+import { isVideoUrl } from "./mediaType";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const GRAPH = "https://graph.facebook.com/v23.0";
 
 /**
  * Facebook Pages via the Meta Graph API.
@@ -19,7 +20,7 @@ export const facebookAdapter: ProviderAdapter = {
         "pages_show_list,pages_manage_posts,pages_read_engagement,business_management",
       response_type: "code",
     });
-    return `https://www.facebook.com/v21.0/dialog/oauth?${params}`;
+    return `https://www.facebook.com/v23.0/dialog/oauth?${params}`;
   },
 
   async handleCallback(code: string) {
@@ -53,7 +54,17 @@ export const facebookAdapter: ProviderAdapter = {
 
   async publish({ body, mediaUrls, account }: PublishInput) {
     let res: Response;
-    if (mediaUrls.length > 0) {
+    if (mediaUrls.length > 0 && isVideoUrl(mediaUrls[0])) {
+      res = await fetch(`${GRAPH}/${account.externalId}/videos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file_url: mediaUrls[0],
+          description: body,
+          access_token: account.accessToken,
+        }),
+      });
+    } else if (mediaUrls.length > 0) {
       // Photo post (first image; Graph API supports multi-photo via batched uploads)
       res = await fetch(`${GRAPH}/${account.externalId}/photos`, {
         method: "POST",
