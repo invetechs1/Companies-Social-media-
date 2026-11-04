@@ -50,7 +50,7 @@ npm run dev                # http://localhost:3000
 npm run worker
 ```
 
-**Seeded login:** `invetechs@gmail.com` / `Admin@1234` → **change this password immediately.**
+**Seeded login:** `bassir@gmail.com` / `Admin@1234` → **change this password immediately.**
 The seed creates three workspaces: Azoom, Alarrab, MCC (Hadathah), with you as super-admin (platform owner).
 
 ## Connecting real social accounts

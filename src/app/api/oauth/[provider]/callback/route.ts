@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getProvider } from "@/lib/providers";
+import { APP_URL } from "@/lib/providers/types";
 
 /**
  * GET /api/oauth/:provider/callback?code=...&state=...
@@ -10,12 +11,12 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   if (!code || !state) {
-    return NextResponse.redirect(new URL("/dashboard?error=oauth_denied", req.url));
+    return NextResponse.redirect(new URL("/dashboard?error=oauth_denied", APP_URL));
   }
 
   const saved = await prisma.oAuthState.findUnique({ where: { state } });
   if (!saved || saved.provider !== params.provider) {
-    return NextResponse.redirect(new URL("/dashboard?error=invalid_state", req.url));
+    return NextResponse.redirect(new URL("/dashboard?error=invalid_state", APP_URL));
   }
   await prisma.oAuthState.delete({ where: { state } });
 
@@ -54,14 +55,14 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
     }
 
     return NextResponse.redirect(
-      new URL(`/dashboard/${saved.organizationId}/accounts?connected=${accounts.length}`, req.url)
+      new URL(`/dashboard/${saved.organizationId}/accounts?connected=${accounts.length}`, APP_URL)
     );
   } catch (err: any) {
     console.error("OAuth callback error:", err);
     return NextResponse.redirect(
       new URL(
         `/dashboard/${saved.organizationId}/accounts?error=${encodeURIComponent(String(err?.message || "oauth_failed").slice(0, 200))}`,
-        req.url
+        APP_URL
       )
     );
   }

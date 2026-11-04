@@ -29,7 +29,8 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
     await requireOrgAccess(session.userId, params.orgId, "admin");
     const parsed = inviteSchema.safeParse(raw);
     if (!parsed.success) return jsonError(parsed.error.errors[0].message);
-    const { name, email, password, role } = parsed.data;
+    const { name, password, role } = parsed.data;
+    const email = parsed.data.email.trim().toLowerCase();
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {

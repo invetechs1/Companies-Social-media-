@@ -6,15 +6,54 @@ import { ProviderAdapter, ProviderError, PublishInput, redirectUri } from "./typ
  */
 
 /**
- * LinkedIn requires a "LinkedIn-Version: YYYYMM" header, and each version stops being
- * accepted ~12 months after release. Compute a recent-but-not-bleeding-edge version at
- * request time instead of hardcoding a date that will eventually go stale again.
+ * LinkedIn only keeps ~12 trailing months of API versions active, so a
+ * hardcoded value (e.g. "202411") eventually starts failing with
+ * 426 NONEXISTENT_VERSION. Use last month's version to stay comfortably
+ * inside the active window (this month's may not be rolled out yet).
  */
 function linkedinApiVersion(): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 2);
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const now = new Date();
+  // Pure month arithmetic (not Date.setMonth) so e.g. 31 March - 1 month can't
+  // overflow into the current month.
+  const idx = now.getUTCFullYear() * 12 + now.getUTCMonth() - 1;
+  return `${Math.floor(idx / 12)}${String((idx % 12) + 1).padStart(2, "0")}`;
 }
+
+/**
+ * Registers an image upload with LinkedIn, uploads the bytes fetched from
+ * `url`, and returns the resulting image URN (e.g. "urn:li:image:...") to
+ * reference from a post's `content.media`/`content.multiImage`.
+ */
+async function uploadLinkedInImage(accessToken: string, owner: string, url: string): Promise<string> {
+  const initRes = await fetch("https://api.linkedin.com/rest/images?action=initializeUpload", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "X-Restli-Protocol-Version": "2.0.0",
+      "LinkedIn-Version": linkedinApiVersion(),
+    },
+    body: JSON.stringify({ initializeUploadRequest: { owner } }),
+  });
+  if (!initRes.ok) throw new ProviderError("linkedin", `image init failed: ${await initRes.text()}`);
+  const initJson = await initRes.json();
+  const uploadUrl: string = initJson.value.uploadUrl;
+  const imageUrn: string = initJson.value.image;
+
+  const imgRes = await fetch(url);
+  if (!imgRes.ok) throw new ProviderError("linkedin", `Could not fetch media: ${url}`);
+  const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+
+  const putRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: imgBuf,
+  });
+  if (!putRes.ok) throw new ProviderError("linkedin", `image upload failed: ${await putRes.text()}`);
+
+  return imageUrn;
+}
+
 export const linkedinAdapter: ProviderAdapter = {
   key: "linkedin",
   label: "LinkedIn",
@@ -64,7 +103,20 @@ export const linkedinAdapter: ProviderAdapter = {
     ];
   },
 
-  async publish({ body, account }: PublishInput) {
+  async publish({ body, mediaUrls, account }: PublishInput) {
+    const owner = `urn:li:person:${account.externalId}`;
+
+    let content: Record<string, unknown> | undefined;
+    if (mediaUrls.length === 1) {
+      const imageUrn = await uploadLinkedInImage(account.accessToken, owner, mediaUrls[0]);
+      content = { media: { id: imageUrn } };
+    } else if (mediaUrls.length > 1) {
+      const imageUrns = await Promise.all(
+        mediaUrls.map((url) => uploadLinkedInImage(account.accessToken, owner, url))
+      );
+      content = { multiImage: { images: imageUrns.map((id) => ({ id })) } };
+    }
+
     const res = await fetch("https://api.linkedin.com/rest/posts", {
       method: "POST",
       headers: {
@@ -74,10 +126,11 @@ export const linkedinAdapter: ProviderAdapter = {
         "LinkedIn-Version": linkedinApiVersion(),
       },
       body: JSON.stringify({
-        author: `urn:li:person:${account.externalId}`,
+        author: owner,
         commentary: body,
         visibility: "PUBLIC",
         distribution: { feedDistribution: "MAIN_FEED", targetEntities: [], thirdPartyDistributionChannels: [] },
+        ...(content ? { content } : {}),
         lifecycleState: "PUBLISHED",
         isReshareDisabledByAuthor: false,
       }),

@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies, headers } from "next/headers";
 import { prisma } from "./db";
+import { isHttps } from "./origin";
 
 const SECRET = new TextEncoder().encode(
   process.env.AUTH_SECRET || "dev-secret-change-me"
@@ -25,7 +26,9 @@ export async function createSession(payload: SessionPayload): Promise<string> {
   cookies().set(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Secure only when the browser-facing connection is HTTPS (domain behind TLS proxy);
+    // stays false when still reached via http://IP:port so login keeps working.
+    secure: isHttps(headers()),
     maxAge: 60 * 60 * 24 * 30,
     path: "/",
   });

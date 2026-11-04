@@ -49,6 +49,9 @@ export async function publishPost(postId: string) {
 
   await prisma.post.update({ where: { id: postId }, data: { status: "publishing" } });
 
+  // Media is stored as a relative path (e.g. "/uploads/{orgId}/{file}"); every
+  // provider either fetches it itself (YouTube, LinkedIn) or hands the URL to
+  // the platform to fetch (Facebook, Instagram, TikTok), so it must be absolute.
   const mediaUrls: string[] = JSON.parse(post.mediaUrls || "[]").map(toAbsoluteUrl);
   let anySuccess = false;
   let anyFailure = false;
