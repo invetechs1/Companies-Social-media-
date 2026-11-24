@@ -79,6 +79,21 @@ export async function publishPost(postId: string) {
           errorMessage: null,
         },
       });
+
+      // Auto-post the first comment (e.g. hashtags) if set and supported.
+      const firstComment = target.firstComment?.trim();
+      if (firstComment && provider.comment && result.externalPostId) {
+        try {
+          await provider.comment({
+            externalPostId: result.externalPostId,
+            message: firstComment,
+            account: { externalId: target.socialAccount.externalId, accessToken },
+          });
+        } catch (err: any) {
+          // The post itself succeeded; a failed first comment shouldn't fail the post.
+          console.error(`[publisher] first comment failed (${target.socialAccount.provider}):`, err?.message || err);
+        }
+      }
       anySuccess = true;
     } catch (err: any) {
       anyFailure = true;

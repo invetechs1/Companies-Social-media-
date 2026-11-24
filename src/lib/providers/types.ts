@@ -64,6 +64,14 @@ export interface ProviderAdapter {
   publish(input: PublishInput): Promise<PublishResult>;
   /** Optional: fetch current audience & reach metrics for an account. */
   getMetrics?(input: MetricsInput): Promise<AccountMetrics>;
+  /** Optional: add a comment under a just-published post (used for first comment / hashtags). */
+  comment?(input: CommentInput): Promise<void>;
+}
+
+export interface CommentInput {
+  externalPostId: string;
+  message: string;
+  account: { externalId: string; accessToken: string };
 }
 
 export const APP_URL = process.env.APP_URL || "http://localhost:3000";

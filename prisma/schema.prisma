@@ -105,6 +105,8 @@ model PostTarget {
   socialAccountId String
   // Optional per-platform override of the post body
   bodyOverride    String?
+  // Optional auto-posted first comment (e.g. hashtags on Instagram/Facebook)
+  firstComment    String?
   status          String        @default("pending") // pending | published | failed
   externalPostId  String? // id returned by the platform after publishing
   errorMessage    String?

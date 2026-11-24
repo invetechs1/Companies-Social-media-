@@ -87,6 +87,15 @@ export const facebookAdapter: ProviderAdapter = {
     return { externalPostId: json.post_id || json.id };
   },
 
+  async comment({ externalPostId, message, account }) {
+    const res = await fetch(`${GRAPH}/${externalPostId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: account.accessToken }),
+    });
+    if (!res.ok) throw new ProviderError("facebook", JSON.stringify(await res.json()));
+  },
+
   async getMetrics({ externalId, accessToken }) {
     // Follower count (always available with pages_read_engagement).
     const pageRes = await fetch(

@@ -20,6 +20,13 @@ export default function ComposerPage() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState<"" | "draft" | "schedule" | "now">("");
   const [error, setError] = useState("");
+  const [customize, setCustomize] = useState(false);
+  // per-account overrides: { [accountId]: { body, firstComment } }
+  const [overrides, setOverrides] = useState<Record<string, { body: string; firstComment: string }>>({});
+
+  function setOverride(id: string, key: "body" | "firstComment", value: string) {
+    setOverrides((o) => ({ ...o, [id]: { body: o[id]?.body ?? "", firstComment: o[id]?.firstComment ?? "", [key]: value } }));
+  }
 
   useEffect(() => {
     fetch(`/api/orgs/${orgId}/accounts`)
@@ -51,6 +58,19 @@ export default function ComposerPage() {
     if (mode === "schedule" && !schedule) return setError("Pick a date & time to schedule.");
     setSaving(mode);
 
+    // Build per-account overrides from the customization panel (selected only).
+    const overridesPayload: Record<string, { body?: string; firstComment?: string }> = {};
+    if (customize) {
+      for (const id of selected) {
+        const o = overrides[id];
+        if (!o) continue;
+        const entry: { body?: string; firstComment?: string } = {};
+        if (o.body.trim() && o.body.trim() !== body.trim()) entry.body = o.body.trim();
+        if (o.firstComment.trim()) entry.firstComment = o.firstComment.trim();
+        if (entry.body || entry.firstComment) overridesPayload[id] = entry;
+      }
+    }
+
     const res = await fetch(`/api/orgs/${orgId}/posts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -60,6 +80,7 @@ export default function ComposerPage() {
         socialAccountIds: selected,
         scheduledAt: mode === "schedule" ? new Date(schedule).toISOString() : null,
         requestApproval,
+        ...(Object.keys(overridesPayload).length ? { overrides: overridesPayload } : {}),
       }),
     });
     const d = await res.json();
@@ -137,6 +158,51 @@ export default function ComposerPage() {
           ))}
         </div>
       </div>
+
+      {selected.length > 0 && (
+        <div className="card p-5 mt-4">
+          <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <input type="checkbox" checked={customize} onChange={(e) => setCustomize(e.target.checked)} />
+            Customize text &amp; hashtags per platform
+          </label>
+          {customize && (
+            <div className="mt-4 space-y-4">
+              <p className="text-xs text-slate-500">
+                Leave a box empty to use the main text above. The first comment is posted automatically right after the post
+                (great for hashtags on Instagram &amp; Facebook).
+              </p>
+              {selected.map((id) => {
+                const a = accounts.find((x) => x.id === id);
+                if (!a) return null;
+                const meta = PROVIDER_META[a.provider];
+                const o = overrides[id] || { body: "", firstComment: "" };
+                const supportsComment = a.provider === "facebook" || a.provider === "instagram";
+                return (
+                  <div key={id} className="border border-slate-200 rounded-lg p-3">
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      <span>{meta?.icon}</span> {a.displayName}
+                    </div>
+                    <textarea
+                      className="input mt-2 min-h-[80px] text-sm"
+                      placeholder={`Custom text for ${meta?.label || a.provider} (optional)`}
+                      value={o.body}
+                      onChange={(e) => setOverride(id, "body", e.target.value)}
+                    />
+                    {supportsComment && (
+                      <input
+                        className="input mt-2 text-sm"
+                        placeholder="First comment — e.g. #hashtags (optional)"
+                        value={o.firstComment}
+                        onChange={(e) => setOverride(id, "firstComment", e.target.value)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="card p-5 mt-4 space-y-4">
         <div>
