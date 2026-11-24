@@ -38,6 +38,10 @@ model Organization {
   trialEndsAt   DateTime?
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  // Scheduled client reports
+  reportEmail     String?  // where to send the periodic performance report
+  reportFrequency String  @default("off") // off | weekly | monthly
+  reportLastSentAt DateTime?
   createdAt     DateTime        @default(now())
   memberships   Membership[]
   socialAccounts SocialAccount[]

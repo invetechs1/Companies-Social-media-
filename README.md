@@ -83,6 +83,11 @@ Two options (either works):
 2. **Cron webhook:** have any scheduler call these with header `Authorization: Bearer $CRON_SECRET`:
    - `GET {APP_URL}/api/cron/publish` — every minute (publishes scheduled posts).
    - `GET {APP_URL}/api/cron/metrics` — once or twice a day (pulls followers / reach / engagement into the Analytics & Activity dashboards).
+   - `GET {APP_URL}/api/cron/reports` — once a day (sends scheduled weekly/monthly client reports; requires SMTP, below).
+
+### Client reports
+
+Each workspace can email a **branded performance report** to its client on a weekly or monthly cadence (set in **Settings → Scheduled client report**). The report page (**sidebar → Report**) is also viewable any time and prints to PDF from the browser. Email delivery needs SMTP configured in `.env` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`); without it the report page still works and clients can Save-as-PDF. Send on demand from Settings (**Send report now**) or `POST /api/orgs/:orgId/reports/send`.
 
 ### Analytics sync
 

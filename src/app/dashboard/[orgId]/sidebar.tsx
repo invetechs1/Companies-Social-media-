@@ -13,6 +13,7 @@ const nav = [
   { href: "/accounts", label: "Social accounts", icon: "🔗" },
   { href: "/media", label: "Media library", icon: "🖼️" },
   { href: "/analytics", label: "Analytics", icon: "📈" },
+  { href: "/reports", label: "Report", icon: "📑" },
   { href: "/team", label: "Team", icon: "👥" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
