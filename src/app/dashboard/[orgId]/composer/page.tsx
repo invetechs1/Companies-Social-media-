@@ -28,6 +28,25 @@ export default function ComposerPage() {
     setOverrides((o) => ({ ...o, [id]: { body: o[id]?.body ?? "", firstComment: o[id]?.firstComment ?? "", [key]: value } }));
   }
 
+  const [ai, setAi] = useState<"" | "generate" | "improve" | "hashtags" | "translate_ar" | "translate_en">("");
+
+  async function runAi(action: "generate" | "improve" | "hashtags" | "translate_ar" | "translate_en") {
+    setError("");
+    if (!body.trim()) return setError("Write a few words first, then let AI help.");
+    setAi(action);
+    const platform = accounts.find((a) => a.id === selected[0])?.provider;
+    const res = await fetch(`/api/orgs/${orgId}/ai`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, text: body, platform }),
+    });
+    const d = await res.json();
+    setAi("");
+    if (!res.ok) return setError(d.error || "AI request failed");
+    // Hashtags append to the caption; everything else replaces it.
+    setBody((b) => (action === "hashtags" ? `${b}\n\n${d.result}` : d.result));
+  }
+
   useEffect(() => {
     fetch(`/api/orgs/${orgId}/accounts`)
       .then((r) => r.json())
@@ -144,6 +163,27 @@ export default function ComposerPage() {
           maxLength={charLimit}
         />
         <div className="mt-1 text-xs text-slate-400 text-right">{body.length}/{charLimit}</div>
+
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-slate-500">✨ AI assist:</span>
+          {([
+            ["improve", "Improve"],
+            ["generate", "Rewrite from idea"],
+            ["hashtags", "+ Hashtags"],
+            ["translate_ar", "→ Arabic"],
+            ["translate_en", "→ English"],
+          ] as const).map(([action, label]) => (
+            <button
+              key={action}
+              type="button"
+              className="badge border border-slate-300 bg-white px-2.5 py-1 text-slate-600 hover:border-brand-400 hover:text-brand-700 disabled:opacity-50"
+              onClick={() => runAi(action)}
+              disabled={!!ai}
+            >
+              {ai === action ? "…" : label}
+            </button>
+          ))}
+        </div>
 
         <div className="mt-3 flex items-center gap-3 flex-wrap">
           <label className="btn-secondary cursor-pointer">
