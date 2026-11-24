@@ -10,6 +10,8 @@ const patchSchema = z.object({
   customDomain: z.string().nullable().optional(),
   plan: z.string().optional(),
   planStatus: z.string().optional(),
+  reportEmail: z.string().email().nullable().optional().or(z.literal("")),
+  reportFrequency: z.enum(["off", "weekly", "monthly"]).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { orgId: string } }) {
@@ -22,7 +24,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { orgId: str
     if ((parsed.data.plan || parsed.data.planStatus) && !session.isSuperAdmin) {
       return jsonError("Only the platform owner can change plans.", 403);
     }
-    const org = await prisma.organization.update({ where: { id: params.orgId }, data: parsed.data });
+    const data = { ...parsed.data };
+    if (data.reportEmail === "") data.reportEmail = null; // normalize empty → cleared
+    const org = await prisma.organization.update({ where: { id: params.orgId }, data });
     return NextResponse.json({ organization: org });
   });
 }

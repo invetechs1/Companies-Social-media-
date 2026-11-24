@@ -12,6 +12,8 @@ type Org = {
   customDomain: string | null;
   plan: string;
   planStatus: string;
+  reportEmail: string | null;
+  reportFrequency: string;
 };
 
 export default function SettingsPage() {
@@ -21,6 +23,34 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState("");
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingMsg, setBillingMsg] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportMsg, setReportMsg] = useState("");
+
+  async function saveReports() {
+    if (!org) return;
+    setReportBusy(true);
+    setReportMsg("");
+    const res = await fetch(`/api/orgs/${orgId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reportEmail: org.reportEmail || "", reportFrequency: org.reportFrequency }),
+    });
+    setReportBusy(false);
+    setReportMsg(res.ok ? "Saved ✓" : (await res.json()).error || "Failed to save");
+  }
+
+  async function sendReportNow() {
+    setReportBusy(true);
+    setReportMsg("");
+    const res = await fetch(`/api/orgs/${orgId}/reports/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days: 30 }),
+    });
+    const d = await res.json();
+    setReportBusy(false);
+    setReportMsg(res.ok ? `Sent to ${d.to} ✓` : d.error || "Failed to send");
+  }
 
   const load = useCallback(async () => {
     const d = await (await fetch(`/api/orgs`)).json();
@@ -107,6 +137,52 @@ export default function SettingsPage() {
         {billingMsg && <p className="text-sm text-red-600 mt-3">{billingMsg}</p>}
         <p className="text-xs text-slate-400 mt-3">
           Payments are processed by Stripe. Invoices, payment methods and cancellation are handled in the billing portal.
+        </p>
+      </div>
+
+      <div className="mt-6 card p-6">
+        <h2 className="font-semibold">Scheduled client report</h2>
+        <p className="text-sm text-slate-600 mt-1">
+          Email a branded performance report to the client automatically.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="text-sm font-medium">Recipient email</label>
+            <input
+              className="input mt-1"
+              type="email"
+              placeholder="client@company.com"
+              value={org.reportEmail || ""}
+              onChange={(e) => setOrg({ ...org, reportEmail: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Frequency</label>
+            <select
+              className="input mt-1"
+              value={org.reportFrequency}
+              onChange={(e) => setOrg({ ...org, reportFrequency: e.target.value })}
+            >
+              <option value="off">Off</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-3 flex-wrap">
+          <button className="btn-primary" disabled={reportBusy} onClick={saveReports}>
+            {reportBusy ? "Saving…" : "Save schedule"}
+          </button>
+          <button className="btn-secondary" disabled={reportBusy || !org.reportEmail} onClick={sendReportNow}>
+            ✉️ Send report now
+          </button>
+          <a className="text-sm text-brand-600 hover:underline" href={`/dashboard/${orgId}/reports`}>
+            Preview report →
+          </a>
+          {reportMsg && <span className="text-sm text-slate-600">{reportMsg}</span>}
+        </div>
+        <p className="text-xs text-slate-400 mt-3">
+          Requires SMTP to be configured on the server (see .env). The client can also open the report page and save it as PDF.
         </p>
       </div>
     </div>
