@@ -10,7 +10,7 @@ function toAbsoluteUrl(url: string): string {
 const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
 /** Refreshes an account's access token if the provider supports it and it's expired (or about to). */
-async function ensureFreshAccessToken(account: {
+export async function ensureFreshAccessToken(account: {
   id: string;
   provider: string;
   accessToken: string;
