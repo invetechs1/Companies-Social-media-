@@ -101,4 +101,19 @@ export const twitterAdapter: ProviderAdapter = {
     if (!res.ok) throw new ProviderError("twitter", JSON.stringify(json));
     return { externalPostId: json.data.id };
   },
+
+  async getMetrics({ externalId, accessToken }) {
+    // Public metrics on the user object (followers). Tweet-level impressions need
+    // elevated access, so we report followers + engagement from public_metrics.
+    const res = await fetch(
+      `https://api.twitter.com/2/users/${externalId}?user.fields=public_metrics`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const json = await res.json();
+    if (!res.ok) throw new ProviderError("twitter", JSON.stringify(json));
+    const pm = json.data?.public_metrics || {};
+    // Tweet-level impressions require elevated API access; followers is the
+    // metric reliably available on the free/basic tier.
+    return { followers: pm.followers_count ?? 0 };
+  },
 };
