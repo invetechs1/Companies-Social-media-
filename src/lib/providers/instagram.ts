@@ -107,6 +107,15 @@ export const instagramAdapter: ProviderAdapter = {
     return { externalPostId: published.id };
   },
 
+  async comment({ externalPostId, message, account }) {
+    const res = await fetch(`${GRAPH}/${externalPostId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: account.accessToken }),
+    });
+    if (!res.ok) throw new ProviderError("instagram", JSON.stringify(await res.json()));
+  },
+
   async getMetrics({ externalId, accessToken }) {
     // Followers from the IG business account profile.
     const profRes = await fetch(
