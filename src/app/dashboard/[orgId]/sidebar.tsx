@@ -7,6 +7,7 @@ const nav = [
   { href: "", label: "Overview", icon: "📊" },
   { href: "/activity", label: "Activity", icon: "📡" },
   { href: "/composer", label: "New post", icon: "✍️" },
+  { href: "/bulk", label: "Bulk schedule", icon: "📤" },
   { href: "/calendar", label: "Calendar", icon: "📅" },
   { href: "/posts", label: "Posts", icon: "📄" },
   { href: "/approvals", label: "Approvals", icon: "✅" },
