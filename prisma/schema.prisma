@@ -45,6 +45,9 @@ model Organization {
   // UTM link tracking — auto-tag outbound links at publish time
   utmEnabled    Boolean  @default(false)
   utmCampaign   String?  // optional utm_campaign value (defaults to "social")
+  // Link-in-bio public page
+  bioHeadline   String?
+  bioLinks      BioLink[]
   createdAt     DateTime        @default(now())
   memberships   Membership[]
   socialAccounts SocialAccount[]
@@ -165,4 +168,15 @@ model OAuthState {
   organizationId String
   codeVerifier String?
   createdAt    DateTime @default(now())
+}
+
+// Link-in-bio: a public links page per workspace (at /l/{slug})
+model BioLink {
+  id             String       @id @default(cuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  title          String
+  url            String
+  order          Int          @default(0)
+  createdAt      DateTime     @default(now())
 }

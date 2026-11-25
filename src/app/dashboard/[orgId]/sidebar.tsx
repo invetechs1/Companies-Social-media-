@@ -13,6 +13,7 @@ const nav = [
   { href: "/approvals", label: "Approvals", icon: "✅" },
   { href: "/accounts", label: "Social accounts", icon: "🔗" },
   { href: "/media", label: "Media library", icon: "🖼️" },
+  { href: "/bio", label: "Link in bio", icon: "🔖" },
   { href: "/analytics", label: "Analytics", icon: "📈" },
   { href: "/reports", label: "Report", icon: "📑" },
   { href: "/team", label: "Team", icon: "👥" },
