@@ -12,6 +12,7 @@ const nav = [
   { href: "/calendar", key: "nav.calendar", icon: "📅" },
   { href: "/posts", key: "nav.posts", icon: "📄" },
   { href: "/approvals", key: "nav.approvals", icon: "✅" },
+  { href: "/inbox", key: "nav.inbox", icon: "💬" },
   { href: "/accounts", key: "nav.accounts", icon: "🔗" },
   { href: "/media", key: "nav.media", icon: "🖼️" },
   { href: "/bio", key: "nav.bio", icon: "🔖" },

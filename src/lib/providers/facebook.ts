@@ -96,6 +96,30 @@ export const facebookAdapter: ProviderAdapter = {
     if (!res.ok) throw new ProviderError("facebook", JSON.stringify(await res.json()));
   },
 
+  async listComments({ externalPostId, accessToken }) {
+    const res = await fetch(
+      `${GRAPH}/${externalPostId}/comments?fields=id,message,from{name},created_time&order=reverse_chronological&limit=25&access_token=${accessToken}`
+    );
+    const json = await res.json();
+    if (!res.ok) throw new ProviderError("facebook", JSON.stringify(json));
+    return (json.data || []).map((c: any) => ({
+      id: c.id,
+      from: c.from?.name || "Someone",
+      text: c.message || "",
+      createdAt: c.created_time,
+    }));
+  },
+
+  async replyToComment({ commentId, message, accessToken }) {
+    // Replying to a comment = commenting on the comment object.
+    const res = await fetch(`${GRAPH}/${commentId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: accessToken }),
+    });
+    if (!res.ok) throw new ProviderError("facebook", JSON.stringify(await res.json()));
+  },
+
   async getMetrics({ externalId, accessToken }) {
     // Follower count (always available with pages_read_engagement).
     const pageRes = await fetch(

@@ -66,12 +66,34 @@ export interface ProviderAdapter {
   getMetrics?(input: MetricsInput): Promise<AccountMetrics>;
   /** Optional: add a comment under a just-published post (used for first comment / hashtags). */
   comment?(input: CommentInput): Promise<void>;
+  /** Optional: list comments on a published post (unified inbox). */
+  listComments?(input: ListCommentsInput): Promise<InboxComment[]>;
+  /** Optional: reply to a specific comment (unified inbox). */
+  replyToComment?(input: ReplyInput): Promise<void>;
 }
 
 export interface CommentInput {
   externalPostId: string;
   message: string;
   account: { externalId: string; accessToken: string };
+}
+
+export interface ListCommentsInput {
+  externalPostId: string;
+  accessToken: string;
+}
+
+export interface InboxComment {
+  id: string;
+  from: string;
+  text: string;
+  createdAt?: string;
+}
+
+export interface ReplyInput {
+  commentId: string;
+  message: string;
+  accessToken: string;
 }
 
 export const APP_URL = process.env.APP_URL || "http://localhost:3000";

@@ -116,6 +116,29 @@ export const instagramAdapter: ProviderAdapter = {
     if (!res.ok) throw new ProviderError("instagram", JSON.stringify(await res.json()));
   },
 
+  async listComments({ externalPostId, accessToken }) {
+    const res = await fetch(
+      `${GRAPH}/${externalPostId}/comments?fields=id,text,username,timestamp&limit=25&access_token=${accessToken}`
+    );
+    const json = await res.json();
+    if (!res.ok) throw new ProviderError("instagram", JSON.stringify(json));
+    return (json.data || []).map((c: any) => ({
+      id: c.id,
+      from: c.username ? `@${c.username}` : "Someone",
+      text: c.text || "",
+      createdAt: c.timestamp,
+    }));
+  },
+
+  async replyToComment({ commentId, message, accessToken }) {
+    const res = await fetch(`${GRAPH}/${commentId}/replies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: accessToken }),
+    });
+    if (!res.ok) throw new ProviderError("instagram", JSON.stringify(await res.json()));
+  },
+
   async getMetrics({ externalId, accessToken }) {
     // Followers from the IG business account profile.
     const profRes = await fetch(
