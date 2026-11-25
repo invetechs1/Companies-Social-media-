@@ -16,6 +16,7 @@ const DICT: Record<string, { en: string; ar: string }> = {
   "nav.calendar": { en: "Calendar", ar: "التقويم" },
   "nav.posts": { en: "Posts", ar: "المنشورات" },
   "nav.approvals": { en: "Approvals", ar: "الموافقات" },
+  "nav.inbox": { en: "Inbox", ar: "الوارد" },
   "nav.accounts": { en: "Social accounts", ar: "الحسابات" },
   "nav.media": { en: "Media library", ar: "الوسائط" },
   "nav.bio": { en: "Link in bio", ar: "رابط البايو" },
