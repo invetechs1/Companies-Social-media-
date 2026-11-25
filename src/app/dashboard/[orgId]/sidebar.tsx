@@ -2,32 +2,35 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { t, Locale } from "@/lib/i18n";
 
 const nav = [
-  { href: "", label: "Overview", icon: "📊" },
-  { href: "/activity", label: "Activity", icon: "📡" },
-  { href: "/composer", label: "New post", icon: "✍️" },
-  { href: "/bulk", label: "Bulk schedule", icon: "📤" },
-  { href: "/calendar", label: "Calendar", icon: "📅" },
-  { href: "/posts", label: "Posts", icon: "📄" },
-  { href: "/approvals", label: "Approvals", icon: "✅" },
-  { href: "/accounts", label: "Social accounts", icon: "🔗" },
-  { href: "/media", label: "Media library", icon: "🖼️" },
-  { href: "/bio", label: "Link in bio", icon: "🔖" },
-  { href: "/analytics", label: "Analytics", icon: "📈" },
-  { href: "/reports", label: "Report", icon: "📑" },
-  { href: "/team", label: "Team", icon: "👥" },
-  { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "", key: "nav.overview", icon: "📊" },
+  { href: "/activity", key: "nav.activity", icon: "📡" },
+  { href: "/composer", key: "nav.composer", icon: "✍️" },
+  { href: "/bulk", key: "nav.bulk", icon: "📤" },
+  { href: "/calendar", key: "nav.calendar", icon: "📅" },
+  { href: "/posts", key: "nav.posts", icon: "📄" },
+  { href: "/approvals", key: "nav.approvals", icon: "✅" },
+  { href: "/accounts", key: "nav.accounts", icon: "🔗" },
+  { href: "/media", key: "nav.media", icon: "🖼️" },
+  { href: "/bio", key: "nav.bio", icon: "🔖" },
+  { href: "/analytics", key: "nav.analytics", icon: "📈" },
+  { href: "/reports", key: "nav.reports", icon: "📑" },
+  { href: "/team", key: "nav.team", icon: "👥" },
+  { href: "/settings", key: "nav.settings", icon: "⚙️" },
 ];
 
 export default function Sidebar({
   org,
   orgs,
   user,
+  locale = "en",
 }: {
   org: { id: string; name: string; brandColor: string; logoUrl: string | null };
   orgs: { id: string; name: string }[];
   user: { name: string; isSuperAdmin: boolean };
+  locale?: Locale;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -38,10 +41,19 @@ export default function Sidebar({
     router.push("/login");
   }
 
+  function toggleLanguage() {
+    const next = locale === "ar" ? "en" : "ar";
+    document.cookie = `locale=${next}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    router.refresh();
+  }
+
+  const borderSide = locale === "ar" ? "border-l" : "border-r";
+
   return (
-    <aside className="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col">
+    <aside className={`w-64 shrink-0 bg-white ${borderSide} border-slate-200 flex flex-col`}>
       <div className="p-4 border-b border-slate-200">
         <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/icon-256.png" alt="" className="h-10 w-10" />
           <span className="font-semibold truncate">Bassir Social Pro</span>
         </div>
@@ -69,7 +81,7 @@ export default function Sidebar({
               }`}
             >
               <span>{item.icon}</span>
-              {item.label}
+              {t(item.key, locale)}
             </Link>
           );
         })}
@@ -81,17 +93,26 @@ export default function Sidebar({
             }`}
           >
             <span>🏢</span>
-            Tenants (resell)
+            {t("nav.tenants", locale)}
           </Link>
         )}
       </nav>
 
+      <div className="p-3 border-t border-slate-200">
+        <button
+          onClick={toggleLanguage}
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+        >
+          🌐 {t("nav.language", locale)}
+        </button>
+      </div>
+
       <div className="p-4 border-t border-slate-200 flex items-center justify-between">
         <div className="text-sm">
           <div className="font-medium truncate">{user.name}</div>
-          {user.isSuperAdmin && <div className="text-xs text-slate-500">Platform owner</div>}
+          {user.isSuperAdmin && <div className="text-xs text-slate-500">{t("nav.platformOwner", locale)}</div>}
         </div>
-        <button onClick={logout} className="text-sm text-slate-500 hover:text-slate-900">Sign out</button>
+        <button onClick={logout} className="text-sm text-slate-500 hover:text-slate-900">{t("nav.signOut", locale)}</button>
       </div>
     </aside>
   );

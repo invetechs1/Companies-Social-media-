@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { normalizeLocale, isRtl } from "@/lib/i18n";
 import Sidebar from "./sidebar";
 
 export const dynamic = "force-dynamic";
@@ -34,12 +36,15 @@ export default async function DashboardLayout({
         })
       ).map((m) => m.organization);
 
+  const locale = normalizeLocale(cookies().get("locale")?.value);
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex" dir={isRtl(locale) ? "rtl" : "ltr"} lang={locale}>
       <Sidebar
         org={{ id: org.id, name: org.name, brandColor: org.brandColor, logoUrl: org.logoUrl }}
         orgs={orgs.map((o) => ({ id: o.id, name: o.name }))}
         user={{ name: session.name, isSuperAdmin: session.isSuperAdmin }}
+        locale={locale}
       />
       <main className="flex-1 min-w-0 p-6 lg:p-8">{children}</main>
     </div>
