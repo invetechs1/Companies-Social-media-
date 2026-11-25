@@ -4,7 +4,9 @@ import { withAuth, requireOrgAccess } from "@/lib/api";
 
 export async function GET(_req: NextRequest, { params }: { params: { orgId: string } }) {
   return withAuth(async (session) => {
-    await requireOrgAccess(session.userId, params.orgId);
+    const membership = await requireOrgAccess(session.userId, params.orgId);
+    // Connecting/disconnecting accounts needs admin or owner (super admins pass as owner).
+    const canManage = membership.role === "admin" || membership.role === "owner";
     const accounts = await prisma.socialAccount.findMany({
       where: { organizationId: params.orgId },
       select: {
@@ -13,6 +15,6 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
       },
       orderBy: { createdAt: "asc" },
     });
-    return NextResponse.json({ accounts });
+    return NextResponse.json({ accounts, canManage });
   });
 }
