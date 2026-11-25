@@ -42,6 +42,9 @@ model Organization {
   reportEmail     String?  // where to send the periodic performance report
   reportFrequency String  @default("off") // off | weekly | monthly
   reportLastSentAt DateTime?
+  // UTM link tracking — auto-tag outbound links at publish time
+  utmEnabled    Boolean  @default(false)
+  utmCampaign   String?  // optional utm_campaign value (defaults to "social")
   createdAt     DateTime        @default(now())
   memberships   Membership[]
   socialAccounts SocialAccount[]

@@ -14,6 +14,8 @@ type Org = {
   planStatus: string;
   reportEmail: string | null;
   reportFrequency: string;
+  utmEnabled: boolean;
+  utmCampaign: string | null;
 };
 
 export default function SettingsPage() {
@@ -37,6 +39,21 @@ export default function SettingsPage() {
     });
     setReportBusy(false);
     setReportMsg(res.ok ? "Saved ✓" : (await res.json()).error || "Failed to save");
+  }
+
+  const [utmBusy, setUtmBusy] = useState(false);
+  const [utmMsg, setUtmMsg] = useState("");
+  async function saveUtm() {
+    if (!org) return;
+    setUtmBusy(true);
+    setUtmMsg("");
+    const res = await fetch(`/api/orgs/${orgId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ utmEnabled: org.utmEnabled, utmCampaign: org.utmCampaign || null }),
+    });
+    setUtmBusy(false);
+    setUtmMsg(res.ok ? "Saved ✓" : (await res.json()).error || "Failed to save");
   }
 
   async function sendReportNow() {
@@ -184,6 +201,37 @@ export default function SettingsPage() {
         <p className="text-xs text-slate-400 mt-3">
           Requires SMTP to be configured on the server (see .env). The client can also open the report page and save it as PDF.
         </p>
+      </div>
+
+      <div className="mt-6 card p-6">
+        <h2 className="font-semibold">Link tracking (UTM)</h2>
+        <p className="text-sm text-slate-600 mt-1">
+          Automatically tag links in your posts so the destination site&apos;s analytics can attribute the traffic
+          (<code className="text-xs">utm_source</code> = the network, <code className="text-xs">utm_medium</code> = social).
+        </p>
+        <label className="flex items-center gap-2 text-sm text-slate-700 mt-4">
+          <input
+            type="checkbox"
+            checked={org.utmEnabled}
+            onChange={(e) => setOrg({ ...org, utmEnabled: e.target.checked })}
+          />
+          Add UTM tags to links when publishing
+        </label>
+        <div className="mt-3 max-w-xs">
+          <label className="text-sm font-medium">Campaign name (optional)</label>
+          <input
+            className="input mt-1"
+            placeholder="social"
+            value={org.utmCampaign || ""}
+            onChange={(e) => setOrg({ ...org, utmCampaign: e.target.value })}
+          />
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button className="btn-primary" disabled={utmBusy} onClick={saveUtm}>
+            {utmBusy ? "Saving…" : "Save"}
+          </button>
+          {utmMsg && <span className="text-sm text-slate-600">{utmMsg}</span>}
+        </div>
       </div>
     </div>
   );

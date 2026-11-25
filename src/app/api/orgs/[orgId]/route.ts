@@ -12,6 +12,8 @@ const patchSchema = z.object({
   planStatus: z.string().optional(),
   reportEmail: z.string().email().nullable().optional().or(z.literal("")),
   reportFrequency: z.enum(["off", "weekly", "monthly"]).optional(),
+  utmEnabled: z.boolean().optional(),
+  utmCampaign: z.string().nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { orgId: string } }) {
