@@ -26,6 +26,19 @@ export interface TokenRefreshResult {
   tokenExpiresAt?: Date;
 }
 
+/** A point-in-time snapshot of an account's audience & reach, pulled from the platform. */
+export interface AccountMetrics {
+  followers?: number;
+  impressions?: number;
+  engagements?: number;
+  clicks?: number;
+}
+
+export interface MetricsInput {
+  externalId: string;
+  accessToken: string;
+}
+
 export interface ProviderAdapter {
   key: ProviderKey;
   label: string;
@@ -49,6 +62,16 @@ export interface ProviderAdapter {
   >;
   /** Publish a post to this platform. */
   publish(input: PublishInput): Promise<PublishResult>;
+  /** Optional: fetch current audience & reach metrics for an account. */
+  getMetrics?(input: MetricsInput): Promise<AccountMetrics>;
+  /** Optional: add a comment under a just-published post (used for first comment / hashtags). */
+  comment?(input: CommentInput): Promise<void>;
+}
+
+export interface CommentInput {
+  externalPostId: string;
+  message: string;
+  account: { externalId: string; accessToken: string };
 }
 
 export const APP_URL = process.env.APP_URL || "http://localhost:3000";

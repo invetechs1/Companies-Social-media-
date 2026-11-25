@@ -26,6 +26,10 @@ const createSchema = z.object({
   socialAccountIds: z.array(z.string()).min(1, "Select at least one social account"),
   scheduledAt: z.string().datetime().nullable().optional(),
   requestApproval: z.boolean().default(false),
+  // Optional per-account customization: { [socialAccountId]: { body?, firstComment? } }
+  overrides: z
+    .record(z.object({ body: z.string().optional(), firstComment: z.string().optional() }))
+    .optional(),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { orgId: string } }) {
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
     await requireOrgAccess(session.userId, params.orgId, "editor");
     const parsed = createSchema.safeParse(raw);
     if (!parsed.success) return jsonError(parsed.error.errors[0].message);
-    const { body, mediaUrls, socialAccountIds, scheduledAt, requestApproval } = parsed.data;
+    const { body, mediaUrls, socialAccountIds, scheduledAt, requestApproval, overrides } = parsed.data;
 
     // Ensure all target accounts belong to this org
     const accounts = await prisma.socialAccount.findMany({
@@ -57,7 +61,18 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         organizationId: params.orgId,
         authorId: session.userId,
-        targets: { create: socialAccountIds.map((id) => ({ socialAccountId: id })) },
+        targets: {
+          create: socialAccountIds.map((id) => {
+            const o = overrides?.[id];
+            const bodyOverride = o?.body?.trim();
+            const firstComment = o?.firstComment?.trim();
+            return {
+              socialAccountId: id,
+              bodyOverride: bodyOverride && bodyOverride !== body.trim() ? bodyOverride : null,
+              firstComment: firstComment || null,
+            };
+          }),
+        },
       },
     });
     if (requestApproval) {

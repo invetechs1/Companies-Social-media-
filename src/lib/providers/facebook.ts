@@ -86,4 +86,41 @@ export const facebookAdapter: ProviderAdapter = {
     if (!res.ok) throw new ProviderError("facebook", JSON.stringify(json));
     return { externalPostId: json.post_id || json.id };
   },
+
+  async comment({ externalPostId, message, account }) {
+    const res = await fetch(`${GRAPH}/${externalPostId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: account.accessToken }),
+    });
+    if (!res.ok) throw new ProviderError("facebook", JSON.stringify(await res.json()));
+  },
+
+  async getMetrics({ externalId, accessToken }) {
+    // Follower count (always available with pages_read_engagement).
+    const pageRes = await fetch(
+      `${GRAPH}/${externalId}?fields=followers_count,fan_count&access_token=${accessToken}`
+    );
+    const page = await pageRes.json();
+    if (!pageRes.ok) throw new ProviderError("facebook", JSON.stringify(page));
+    const followers = page.followers_count ?? page.fan_count ?? 0;
+
+    // Reach & engagement (best-effort — insights can be unavailable on new Pages).
+    let impressions = 0;
+    let engagements = 0;
+    try {
+      const insRes = await fetch(
+        `${GRAPH}/${externalId}/insights?metric=page_impressions,page_post_engagements&period=day&access_token=${accessToken}`
+      );
+      const ins = await insRes.json();
+      for (const m of ins.data || []) {
+        const v = m.values?.[m.values.length - 1]?.value || 0;
+        if (m.name === "page_impressions") impressions = v;
+        if (m.name === "page_post_engagements") engagements = v;
+      }
+    } catch {
+      // leave impressions/engagements at 0 if insights aren't accessible
+    }
+    return { followers, impressions, engagements };
+  },
 };

@@ -106,4 +106,41 @@ export const instagramAdapter: ProviderAdapter = {
     if (!publishRes.ok) throw new ProviderError("instagram", JSON.stringify(published));
     return { externalPostId: published.id };
   },
+
+  async comment({ externalPostId, message, account }) {
+    const res = await fetch(`${GRAPH}/${externalPostId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: account.accessToken }),
+    });
+    if (!res.ok) throw new ProviderError("instagram", JSON.stringify(await res.json()));
+  },
+
+  async getMetrics({ externalId, accessToken }) {
+    // Followers from the IG business account profile.
+    const profRes = await fetch(
+      `${GRAPH}/${externalId}?fields=followers_count&access_token=${accessToken}`
+    );
+    const prof = await profRes.json();
+    if (!profRes.ok) throw new ProviderError("instagram", JSON.stringify(prof));
+    const followers = prof.followers_count ?? 0;
+
+    // Reach & engagement (best-effort; account insights require recent activity).
+    let impressions = 0;
+    let engagements = 0;
+    try {
+      const insRes = await fetch(
+        `${GRAPH}/${externalId}/insights?metric=impressions,reach,accounts_engaged&period=day&metric_type=total_value&access_token=${accessToken}`
+      );
+      const ins = await insRes.json();
+      for (const m of ins.data || []) {
+        const v = m.total_value?.value ?? m.values?.[m.values.length - 1]?.value ?? 0;
+        if (m.name === "impressions") impressions = v;
+        if (m.name === "accounts_engaged") engagements = v;
+      }
+    } catch {
+      // ignore insights errors
+    }
+    return { followers, impressions, engagements };
+  },
 };

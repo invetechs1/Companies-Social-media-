@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { PROVIDER_META, STATUS_META, postPermalink, fmtDate } from "@/lib/ui";
+import SyncButton from "./sync-button";
 
 export const dynamic = "force-dynamic";
 
@@ -68,9 +69,12 @@ export default async function ActivityPage({ params }: { params: { orgId: string
             What&apos;s happening across {org?.name}&apos;s social accounts.
           </p>
         </div>
-        <Link href={`/dashboard/${params.orgId}/analytics`} className="btn-secondary">
-          📈 Full analytics
-        </Link>
+        <div className="flex items-center gap-2">
+          <SyncButton orgId={params.orgId} />
+          <Link href={`/dashboard/${params.orgId}/analytics`} className="btn-secondary">
+            📈 Full analytics
+          </Link>
+        </div>
       </div>
 
       {/* Summary */}
