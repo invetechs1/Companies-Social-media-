@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PROVIDER_META } from "@/lib/ui";
+import { nextBestSlot, recommendedWindows, windowLabel } from "@/lib/bestTime";
 
 type Account = { id: string; provider: string; displayName: string; status: string };
 type Media = { id: string; url: string; fileName: string; mimeType: string };
@@ -123,6 +124,21 @@ export default function ComposerPage() {
   }
 
   const charLimit = selected.some((id) => accounts.find((a) => a.id === id)?.provider === "twitter") ? 280 : 5000;
+
+  const selectedProviders = Array.from(
+    new Set(selected.map((id) => accounts.find((a) => a.id === id)?.provider).filter(Boolean) as string[])
+  );
+
+  function suggestBestTime() {
+    const providers = selectedProviders.length ? selectedProviders : ["instagram"];
+    const slot = nextBestSlot(providers);
+    if (!slot) return;
+    // Format to the datetime-local value (YYYY-MM-DDTHH:mm) in local time.
+    const pad = (x: number) => String(x).padStart(2, "0");
+    setSchedule(
+      `${slot.getFullYear()}-${pad(slot.getMonth() + 1)}-${pad(slot.getDate())}T${pad(slot.getHours())}:${pad(slot.getMinutes())}`
+    );
+  }
 
   return (
     <div className="max-w-3xl">
@@ -247,7 +263,19 @@ export default function ComposerPage() {
       <div className="card p-5 mt-4 space-y-4">
         <div>
           <label className="text-sm font-semibold text-slate-700">Schedule (optional)</label>
-          <input type="datetime-local" className="input mt-1 max-w-xs" value={schedule} onChange={(e) => setSchedule(e.target.value)} />
+          <div className="mt-1 flex items-center gap-2 flex-wrap">
+            <input type="datetime-local" className="input max-w-xs" value={schedule} onChange={(e) => setSchedule(e.target.value)} />
+            <button type="button" className="btn-secondary" onClick={suggestBestTime}>⏰ Best time</button>
+          </div>
+          {selectedProviders.length > 0 && (
+            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-slate-400">Suggested:</span>
+              {recommendedWindows(selectedProviders).slice(0, 4).map((w) => (
+                <span key={`${w.day}-${w.hour}`} className="badge bg-slate-100 text-slate-600 text-xs">{windowLabel(w)}</span>
+              ))}
+              <span className="text-xs text-slate-400">· general best practice for the selected networks</span>
+            </div>
+          )}
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={requestApproval} onChange={(e) => setRequestApproval(e.target.checked)} />
