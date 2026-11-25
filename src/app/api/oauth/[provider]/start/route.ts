@@ -16,7 +16,18 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
 
   const orgId = req.nextUrl.searchParams.get("orgId");
   if (!orgId) return NextResponse.json({ error: "orgId is required" }, { status: 400 });
-  await requireOrgAccess(session.userId, orgId, "admin");
+  try {
+    await requireOrgAccess(session.userId, orgId, "admin");
+  } catch (err: any) {
+    // Not an admin of this workspace (or not a member): send them back with a
+    // readable message instead of an unhandled 500.
+    if (err?.message === "FORBIDDEN") {
+      return NextResponse.redirect(
+        new URL(`/dashboard/${encodeURIComponent(orgId)}/accounts?error=admin_required`, APP_URL)
+      );
+    }
+    throw err;
+  }
 
   if (!isProviderConfigured(params.provider as ProviderKey)) {
     return NextResponse.redirect(
