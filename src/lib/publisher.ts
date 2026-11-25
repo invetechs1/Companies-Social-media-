@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { getProvider } from "./providers";
 import { APP_URL } from "./providers/types";
+import { addUtm } from "./utm";
 
 /** Uploaded media is stored as a relative "/uploads/..." path; providers need an absolute, publicly-fetchable URL. */
 function toAbsoluteUrl(url: string): string {
@@ -43,7 +44,10 @@ export async function ensureFreshAccessToken(account: {
 export async function publishPost(postId: string) {
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    include: { targets: { include: { socialAccount: true } } },
+    include: {
+      targets: { include: { socialAccount: true } },
+      organization: { select: { utmEnabled: true, utmCampaign: true } },
+    },
   });
   if (!post) throw new Error("Post not found");
 
@@ -61,8 +65,15 @@ export async function publishPost(postId: string) {
     try {
       const provider = getProvider(target.socialAccount.provider);
       const accessToken = await ensureFreshAccessToken(target.socialAccount);
+      let body = target.bodyOverride || post.body;
+      if (post.organization?.utmEnabled) {
+        body = addUtm(body, {
+          source: target.socialAccount.provider,
+          campaign: post.organization.utmCampaign || "social",
+        });
+      }
       const result = await provider.publish({
-        body: target.bodyOverride || post.body,
+        body,
         mediaUrls,
         account: {
           externalId: target.socialAccount.externalId,
