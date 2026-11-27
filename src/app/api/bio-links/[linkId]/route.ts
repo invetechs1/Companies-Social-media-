@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { withAuth, jsonError, requireOrgAccess } from "@/lib/api";
+import { isSafeHttpUrl } from "@/lib/safeUrl";
 
 const patchSchema = z.object({
   title: z.string().min(1).optional(),
-  url: z.string().url().optional(),
+  url: z.string().url().refine(isSafeHttpUrl, "Only http:// or https:// links are allowed").optional(),
   order: z.number().optional(),
 });
 
