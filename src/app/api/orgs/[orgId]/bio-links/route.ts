@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { withAuth, jsonError, requireOrgAccess } from "@/lib/api";
+import { isSafeHttpUrl } from "@/lib/safeUrl";
 
 export async function GET(_req: NextRequest, { params }: { params: { orgId: string } }) {
   return withAuth(async (session) => {
@@ -16,7 +17,10 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
 
 const schema = z.object({
   title: z.string().min(1, "Title is required"),
-  url: z.string().url("Enter a valid URL (including https://)"),
+  url: z
+    .string()
+    .url("Enter a valid URL (including https://)")
+    .refine(isSafeHttpUrl, "Only http:// or https:// links are allowed"),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { orgId: string } }) {

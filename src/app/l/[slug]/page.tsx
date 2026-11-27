@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { isSafeHttpUrl } from "@/lib/safeUrl";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export default async function BioPage({ params }: { params: { slug: string } }) 
   });
   if (!org) notFound();
 
+  // Defense in depth: never render a non-http(s) href (javascript:, data:, …)
+  // on a public page, even if one was stored before validation existed.
+  const safeLinks = org.bioLinks.filter((l) => isSafeHttpUrl(l.url));
   const color = org.brandColor || "#3564fb";
   const initial = org.name[0]?.toUpperCase() || "•";
 
@@ -44,10 +48,10 @@ export default async function BioPage({ params }: { params: { slug: string } }) 
         )}
 
         <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 12 }}>
-          {org.bioLinks.length === 0 ? (
+          {safeLinks.length === 0 ? (
             <p style={{ color: "#94a3b8", fontSize: 14 }}>No links yet.</p>
           ) : (
-            org.bioLinks.map((l) => (
+            safeLinks.map((l) => (
               <a
                 key={l.id}
                 href={l.url}

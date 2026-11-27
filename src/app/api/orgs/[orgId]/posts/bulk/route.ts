@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { withAuth, jsonError, requireOrgAccess } from "@/lib/api";
+import { isSafeMediaRef } from "@/lib/safeUrl";
 
 /**
  * POST /api/orgs/:orgId/posts/bulk
@@ -12,7 +13,8 @@ const rowSchema = z.object({
   body: z.string().min(1),
   scheduledAt: z.string().datetime().nullable().optional(),
   providers: z.array(z.string()).min(1), // platform keys: facebook, instagram, ...
-  mediaUrl: z.string().optional(),
+  // http(s) URL or one of this app's own /uploads paths — nothing else is fetched/published.
+  mediaUrl: z.string().refine(isSafeMediaRef, "mediaUrl must be an http(s) URL or an /uploads path").optional(),
 });
 const schema = z.object({ posts: z.array(rowSchema).min(1).max(200) });
 
